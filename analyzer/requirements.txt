@@ -1,0 +1,4 @@
+dpkt
+redis
+pytest
+scapy
