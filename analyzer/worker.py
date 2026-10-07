@@ -1,7 +1,7 @@
 import os, re, json, time, redis
 from analyzer import analyze
 
-r = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=int(os.getenv("REDIS_PORT", 6379)), decode_responses=True, socket_timeout=30)
+r = redis.from_url(os.environ["REDIS_URL"], decode_responses=True, socket_timeout=30) if os.getenv("REDIS_URL") else redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=int(os.getenv("REDIS_PORT", 6379)), decode_responses=True, socket_timeout=30)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 REPORT_TTL = int(os.getenv("REPORT_TTL", 3600))
 QUEUE = "jobs"

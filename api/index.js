@@ -12,10 +12,12 @@ const path = require('path');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
-const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
-const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const UPLOAD_DIR = process.env.UPLOAD_DIR;
+// Accept comma-separated origins so you can whitelist both Netlify URL and localhost
+const FRONTEND_ORIGINS = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+const UPLOAD_DIR = process.env.UPLOAD_DIR || '/data/uploads';
 const TOKEN_TTL_SECONDS = parseInt(process.env.TOKEN_TTL_SECONDS || '3600', 10);
 const UPLOAD_RATE_MAX = parseInt(process.env.UPLOAD_RATE_MAX || '10', 10);
 const GENERAL_RATE_MAX = parseInt(process.env.GENERAL_RATE_MAX || '120', 10);
@@ -27,11 +29,14 @@ if (!TOKEN_SECRET) {
   console.warn('WARNING: TOKEN_SECRET env var is missing. A random secret was generated, but tokens will be invalid upon restart.');
 }
 
-const redis = new Redis({
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  lazyConnect: true
-});
+// Railway Redis plugin injects REDIS_URL automatically; fall back to host/port for local dev
+const redisConfig = process.env.REDIS_URL
+  ? { lazyConnect: true } // ioredis accepts a URL string as first arg
+  : { host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT || '6379', 10), lazyConnect: true };
+
+const redis = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, redisConfig)
+  : new Redis(redisConfig);
 
 redis.on('error', (err) => {
   console.error('Redis error', err);
@@ -40,7 +45,7 @@ redis.on('error', (err) => {
 redis.connect().catch(() => {}); // Attempt initial connection, error is caught and logged
 
 app.use(helmet());
-app.use(cors({ origin: [FRONTEND_ORIGIN] }));
+app.use(cors({ origin: FRONTEND_ORIGINS }));
 
 // Rate limits
 const generalLimiter = rateLimit({
