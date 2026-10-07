@@ -966,4 +966,4 @@ else:
 
         st.info(
             "👆 Start by uploading your Wireshark capture."
-        ) 
+        )
