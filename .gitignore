@@ -1,11 +1,15 @@
 __pycache__/
 *.pyc
+*.pytest_cache/
+node_modules/
 
 data/*.pcap
 data/*.pcapng
 
 output/*.csv
 output/*.png
+
+analyzer/uploads/
 
 .venv/
 venv/
