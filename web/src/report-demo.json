@@ -1,0 +1,133 @@
+{
+  "totalPackets": 1661,
+  "totalBytes": 73077,
+  "durationSeconds": 29.5,
+  "protocols": [
+    {
+      "name": "UDP",
+      "packets": 1415,
+      "percent": 85.19
+    },
+    {
+      "name": "TCP",
+      "packets": 240,
+      "percent": 14.45
+    },
+    {
+      "name": "ICMP",
+      "packets": 6,
+      "percent": 0.36
+    }
+  ],
+  "topSources": [
+    {
+      "ip": "192.168.1.77",
+      "packets": 1400,
+      "bytes": 58800,
+      "uniquePorts": 1
+    },
+    {
+      "ip": "192.168.1.99",
+      "packets": 180,
+      "bytes": 9720,
+      "uniquePorts": 180
+    },
+    {
+      "ip": "192.168.1.20",
+      "packets": 75,
+      "bytes": 4305,
+      "uniquePorts": 2
+    },
+    {
+      "ip": "192.168.1.30",
+      "packets": 6,
+      "bytes": 252,
+      "uniquePorts": 0
+    }
+  ],
+  "packetsPerSecond": [
+    4,
+    2,
+    3,
+    2,
+    3,
+    3,
+    3,
+    2,
+    3,
+    2,
+    13,
+    12,
+    13,
+    12,
+    13,
+    13,
+    13,
+    12,
+    13,
+    12,
+    1414,
+    12,
+    13,
+    12,
+    13,
+    13,
+    13,
+    12,
+    4,
+    2
+  ],
+  "alerts": [
+    {
+      "severity": "high",
+      "type": "potential_port_scan",
+      "source": "192.168.1.99",
+      "destination": "192.168.1.10",
+      "protocol": "TCP",
+      "ports": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "observed": 180,
+      "threshold": 100,
+      "window": 60,
+      "explanation": "192.168.1.99 contacted 180 distinct ports within 60 seconds, which is possible port scanning.",
+      "nextStep": "Check whether this host is expected to scan the network. If not, review its other traffic and consider blocking it."
+    },
+    {
+      "severity": "medium",
+      "type": "high_request_rate",
+      "source": "192.168.1.77",
+      "destination": null,
+      "protocol": null,
+      "ports": [],
+      "observed": 1400,
+      "threshold": 1000,
+      "window": 1,
+      "explanation": "192.168.1.77 sent 1400 packets in one second, above the limit of 1000. This is a possible flood or heavy transfer.",
+      "nextStep": "Check whether this is a backup, download or other expected heavy traffic. If not, investigate this source."
+    }
+  ],
+  "processing": {
+    "seconds": 0.021,
+    "analyzerVersion": "0.1.0"
+  }
+}
