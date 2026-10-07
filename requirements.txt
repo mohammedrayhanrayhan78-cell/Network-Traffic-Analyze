@@ -3,3 +3,7 @@ scapy
 pandas
 matplotlib
 redis
+fastapi
+uvicorn
+pydantic
+python-multipart
