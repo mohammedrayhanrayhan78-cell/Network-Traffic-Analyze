@@ -1,783 +1,524 @@
-🔎 Network Traffic Analyzer
+# 🔎 Network Traffic Analyzer
 
-📡 See what is happening inside network traffic --- in a simple way.
+A beginner-friendly cybersecurity and networking project that analyzes captured network traffic from PCAP files and converts raw packet data into useful statistics, visualizations, and simple anomaly alerts.
 
-A beginner-friendly cybersecurity and networking project that reads
-captured network packets, understands what they contain, analyzes the
-traffic, and turns the results into clean charts and simple alerts.
+The project is designed to make network traffic easier to understand by answering questions such as:
 
-🌐 The Big Idea
+- How many packets are present?
+- How much data was transferred?
+- Which protocols are being used?
+- What is the average packet size?
+- Are there unusually large packets?
+- What does the traffic look like visually?
 
-Imagine a huge road full of vehicles.
+---
 
-🚗   🚕   🚌   🚚   🚓   🚗   🛵   🚑
-──────────────────────────────────────────→
-                 🛣️ ROAD
+# 🎯 Project Overview
 
-Now imagine that the internet is a road and the packets are the
-vehicles.
+Network communication is made up of small units of data called **packets**.
 
-📦   📦   📦   📦   📦   📦   📦
-────────────────────────────────────→
-              🌐 NETWORK
+A packet can contain information such as:
 
-Our project looks at those packets and asks:
+- Source IP address
+- Destination IP address
+- Network protocol
+- Packet size
+- Timestamp
 
-Who is talking? What are they using? How much traffic is there? Does
-anything look unusual?
+Instead of manually inspecting thousands of packets, this project automatically reads a captured network file and summarizes the traffic.
 
-🧒 First: What Is a Packet?
+### Basic workflow
 
-A packet is a small piece of information traveling through a
-network.
-
-Think of it like sending a tiny parcel.
-
-             📦 PACKET
-        ┌─────────────────┐
-        │ 👤 FROM         │
-        │ 192.168.1.10    │
-        │                 │
-        │ 🎯 TO           │
-        │ 8.8.8.8         │
-        │                 │
-        │ 🌐 PROTOCOL     │
-        │ TCP             │
-        │                 │
-        │ 📏 SIZE         │
-        │ 512 bytes       │
-        └─────────────────┘
-
-A packet can contain information that helps us understand:
-
-👤 Who sent it
-
-🎯 Where it is going
-
-🌐 Which protocol it uses
-
-🔢 Which ports are involved
-
-📏 How large it is
-
-Our job is to inspect these packets and turn them into useful
-information.
-
-🎯 What Are We Building?
-
-We are building a Network Traffic Analyzer.
-
-             📦 RAW PACKETS
-                    │
-                    ▼
-              🔍 INSPECT
-                    │
-                    ▼
-             🧠 UNDERSTAND
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-      🌐 WHAT?    👥 WHO?     📏 HOW BIG?
-        │           │           │
-        └───────────┼───────────┘
-                    ▼
-                 📊 ANALYZE
-                    │
-                    ▼
-              🚨 CHECK FOR
-              UNUSUAL PATTERNS
-                    │
-                    ▼
-               📈 RESULTS
-
-The project takes a network capture and produces useful information such
-as:
-
-📊 Protocol breakdown
-👥 Top source IPs
-🎯 Top destination IPs
-📏 Packet-size information
-🚨 Simple anomaly alerts
-📈 Visual charts
-
-🗺️ The Entire Project in One Picture
-
-flowchart LR
-    A["🌐 Network"] --> B["📦 Packets"]
-    B --> C["🦈 Wireshark / PCAP"]
-    C --> D["🐍 Python + Scapy"]
-    D --> E["🔍 Extract Information"]
-
-    E --> F["🌐 Protocols"]
-    E --> G["👥 IP Addresses"]
-    E --> H["📏 Packet Sizes"]
-    E --> I["🚨 Traffic Patterns"]
-
-    F --> J["🐼 pandas"]
-    G --> J
-    H --> J
-
-    J --> K["📊 matplotlib"]
-    I --> K
-
-    K --> L["📈 Charts"]
-    K --> M["🚨 Alerts"]
-
-🦈 Step 1 --- Capture the Traffic
-
-Before analyzing traffic, we need the traffic itself.
-
-One way to inspect or capture network packets is Wireshark.
-
-Think of Wireshark as a camera pointed at the network.
-
-🌐 NETWORK
-    │
-    │ 📦 📦 📦 📦 📦
-    ▼
-🦈 WIRESHARK
-    │
-    ▼
-📝 SAVED CAPTURE
-
-We can save that capture as a .pcap file.
-
-📦 What Is a PCAP File?
-
-Don't worry about the name.
-
-A PCAP file is basically a recording of network packets.
-
-Think about a video:
-
-🎥 VIDEO
-   │
-   └── records what happened
-
-PCAP does something similar:
-
-🦈 WIRESHARK
+```text
+🦈 Wireshark
      │
-     │ records packets
      ▼
-📁 traffic.pcap
+📁 PCAP File
      │
-     └── contains captured packets
+     ▼
+🐍 Python + Scapy
+     │
+     ▼
+🔍 Packet Analysis
+     │
+     ├───────────────┐
+     ▼               ▼
+📊 Statistics    🚨 Anomaly Detection
+     │               │
+     └───────┬───────┘
+             ▼
+       📈 Visualizations
+             │
+             ▼
+        📄 CSV Reports
+🧒 What Is a Network Packet?
 
-Instead of needing a live network every time, our Python program can
-simply read the saved file.
-
-📁 traffic.pcap
-      │
-      ▼
-🐍 OUR PROGRAM
-      │
-      ▼
-📊 ANALYSIS
-
-This makes development much easier.
-
-🐍 Step 2 --- Python Reads the Packets
-
-Python is the brain of our analyzer.
-
-📁 traffic.pcap
-       │
-       ▼
-    🐍 PYTHON
-       │
-       ▼
-   📦 📦 📦 📦
-
-But Python alone doesn't make packet analysis convenient.
-
-That's where Scapy comes in.
-
-🕷️ Step 3 --- Scapy
-
-Scapy is a Python library for working with network packets.
-
-Think of Scapy as a pair of special glasses.
-
-Without it:
-
-📦📦📦📦📦
-"Lots of packets..."
-
-With Scapy:
-
-📦 → 👤 Source IP
-   → 🎯 Destination IP
-   → 🌐 Protocol
-   → 🔢 Ports
-   → 📏 Size
-
-So Scapy helps our Python program open a packet and inspect its
-contents.
-
-🧩 What Information Do We Take From a Packet?
-
-We can imagine every packet going through a small inspection machine:
-
-                  📦 PACKET
-                     │
-                     ▼
-              ┌──────────────┐
-              │ 🔍 INSPECTOR │
-              └──────┬───────┘
-                     │
-        ┌────────────┼────────────┐
-        ▼            ▼            ▼
-     👤 SOURCE    🎯 DEST.     🌐 PROTOCOL
-        │            │            │
-        └────────────┼────────────┘
-                     │
-              ┌──────┴──────┐
-              ▼             ▼
-           🔢 PORTS       📏 SIZE
-
-This extracted information becomes the raw material for our analysis.
-
-🌐 Step 4 --- Understanding Protocols
-
-A protocol is simply a set of rules that tells computers how to
-communicate.
-
-Think of different protocols as different ways of communicating.
-
-                  🌐 NETWORK
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-       TCP           UDP           ICMP
-       🔒            ⚡             📡
-   reliable        faster        diagnostic
-
-We are particularly interested in traffic such as:
-
-🔒 TCP
-
-TCP focuses on reliable communication.
-
-💻 ──────── TCP ────────> 🖥️
-       "Let's communicate reliably."
-
-⚡ UDP
-
-UDP is commonly used when low overhead and speed are useful.
-
-💻 ───────── UDP ────────> 🖥️
-            ⚡
-
-📡 ICMP
-
-ICMP is commonly used for network control and diagnostic messages.
+A network packet is a small unit of data transmitted between devices.
 
 For example:
 
-💻 ─── ping ───> 🖥️
-       │
-       ▼
-     ICMP
+        📦 PACKET
+   ┌──────────────────┐
+   │ Source            │
+   │ 192.168.1.10      │
+   │                   │
+   │ Destination       │
+   │ 8.8.8.8           │
+   │                   │
+   │ Protocol          │
+   │ TCP               │
+   │                   │
+   │ Size              │
+   │ 512 bytes         │
+   └──────────────────┘
 
-📖 DNS
+Our analyzer extracts this information from captured packets and organizes it into a structured dataset.
 
-DNS helps translate a domain name into an IP address.
+🎯 What Does This Project Do?
 
-"example.com"
-      │
-      ▼
-     DNS
-      │
-      ▼
-"93.184.x.x"
+The Network Traffic Analyzer takes a .pcap network capture and performs several types of analysis.
 
-📊 Step 5 --- Protocol Distribution
+Main features
+📦 Count total packets
+💾 Calculate total traffic volume
+📏 Calculate average packet size
+🌐 Identify common network protocols
+📊 Calculate protocol distribution
+🚨 Detect unusually large packets
+📈 Generate traffic visualizations
+📄 Export analyzed packet information to CSV
+📄 Export detected anomalies to CSV
+🦈 Step 1 — Capture Network Traffic
 
-After reading many packets, we can count how many packets belong to each
-protocol.
+Network traffic can be captured using Wireshark.
 
-For example:
-
-TCP   ████████████████████
-UDP   ███████████
-DNS   ███████
-ICMP  ███
-
-This answers:
-
-"What kind of traffic is inside this capture?"
-
-The actual numbers depend on the PCAP file we analyze.
-
-👥 Step 6 --- Who Is Talking the Most?
-
-Every packet has a source and destination.
-
-💻 A ───────────────> 🖥️ B
-   source              destination
-
-If one IP appears again and again, it may be generating a lot of
-traffic.
-
-We call frequently communicating devices top talkers.
-
-Imagine a classroom:
-
-👨 Student A   ███████████████
-👩 Student B   ████████
-👨 Student C   ████
-👩 Student D   ██
-
-Our analyzer does the same thing with IP addresses.
+Wireshark records packets travelling through a network interface and allows the capture to be saved as a PCAP file.
 
 Example:
 
-TOP SOURCE IPs
+🌐 Network
+    │
+    ▼
+📦 📦 📦 📦 📦 📦
+    │
+    ▼
+🦈 Wireshark
+    │
+    ▼
+📁 traffic.pcap
 
-192.168.1.10   ███████████████
-192.168.1.15   █████████
-192.168.1.20   █████
+The saved PCAP file becomes the input for our Python analyzer.
 
-This helps us understand which devices are communicating most
-frequently.
+⚠️ Only capture and analyze network traffic that you are authorized to inspect.
 
-📏 Step 7 --- Packet Sizes
+🐍 Step 2 — Python and Scapy
 
-Packets are not always the same size.
+Python is used as the main programming language.
 
-📦     Small
-📦📦   Medium
-📦📦📦 Large
+The project uses Scapy to read and inspect packets stored inside the PCAP file.
 
-Our analyzer can collect packet sizes and summarize them.
+Scapy allows the program to access information such as:
 
-Packet Size
+📦 Packet
+ │
+ ├── Timestamp
+ ├── Length
+ ├── Source IP
+ ├── Destination IP
+ └── Protocol
 
-0–250 bytes      ███████████████
-251–500 bytes    █████████
-501–750 bytes    █████
-751+ bytes       ██
+The extracted information is then converted into a pandas DataFrame for analysis.
 
-This gives us another way to understand the traffic.
+🔍 Step 3 — Packet Analysis
 
-🐼 Step 8 --- pandas
+For every packet, the analyzer extracts basic information.
 
-Now we have a lot of information.
+The current analyzer records:
 
-Imagine hundreds or thousands of packets:
+Information	Description
+Timestamp	Time associated with the packet
+Length	Size of the packet in bytes
+Protocol	Detected network protocol
+Source	Source IP address
+Destination	Destination IP address
 
-📦 📦 📦 📦 📦 📦 📦 📦 📦 📦
-📦 📦 📦 📦 📦 📦 📦 📦 📦 📦
-📦 📦 📦 📦 📦 📦 📦 📦 📦 📦
+Supported protocol identification currently includes:
 
-Trying to manually count everything would be painful.
+TCP
+UDP
+ICMP
+IP
+ARP
+OTHER
+📊 Step 4 — Traffic Statistics
 
-That's where pandas helps.
+After the packets are extracted, the project calculates basic traffic statistics.
 
-We can organize the information into a table:
+Total Packets
 
-┌────┬──────────────┬──────────────┬──────────┬──────┐
-│ #  │ Source       │ Destination  │ Protocol │ Size │
-├────┼──────────────┼──────────────┼──────────┼──────┤
-│ 1  │ 192.168.1.10 │ 8.8.8.8      │ UDP      │ 72   │
-│ 2  │ 192.168.1.10 │ 1.1.1.1      │ TCP      │ 512  │
-│ 3  │ 192.168.1.20 │ 192.168.1.1  │ ICMP     │ 98   │
-└────┴──────────────┴──────────────┴──────────┴──────┘
+The total number of packets contained in the PCAP file.
 
-Now counting and grouping the data becomes much easier.
+Total Bytes
 
-📊 Step 9 --- matplotlib
+The total amount of captured network data.
 
-Numbers are useful.
+Average Packet Size
 
-But pictures are often easier to understand.
-
-That's why we use matplotlib.
-
-🐍 Python
-   │
-   ▼
-🐼 pandas
-   │
-   ▼
-📊 matplotlib
-   │
-   ├── Protocol Chart
-   ├── Top IP Chart
-   └── Packet Size Chart
-
-For example:
+The average size of all analyzed packets.
 
 Protocol Distribution
 
-TCP    ███████████████████
-UDP    ███████████
-DNS    ██████
-ICMP   ███
+The number of packets belonging to each detected protocol.
 
-The actual charts generated by the project can be much cleaner and more
-detailed than this simple illustration.
+Example:
 
-🚨 Step 10 --- Finding Something Unusual
+Protocol Distribution
 
-Now comes the security part.
+TCP      █████████████████
+UDP      ██████████
+ICMP     ████
+ARP      ███████
+OTHER    ███
 
-We don't want to say:
+The actual values depend on the PCAP file being analyzed.
 
-"This is definitely an attack."
+🚨 Step 5 — Basic Anomaly Detection
 
-Instead, we can say:
+The project includes a simple rule-based anomaly detector.
 
-"This traffic looks unusual and deserves attention."
-
-One simple example is a possible port scan.
-
-🚪 What Is a Port?
-
-Think of a computer like a building.
-
-              🏢 COMPUTER
-        ┌────────────────────┐
-        │ 🚪 Port 22         │
-        │ 🚪 Port 53         │
-        │ 🚪 Port 80         │
-        │ 🚪 Port 443        │
-        │ 🚪 Port 8080       │
-        └────────────────────┘
-
-Different network services can listen on different ports.
-
-A normal connection might look like:
-
-💻 ───────────> 🚪 Port 443
-
-But imagine one IP trying many different doors:
-
-                 ┌── 🚪 21
-                 ├── 🚪 22
-                 ├── 🚪 23
-                 ├── 🚪 25
-💻 ──────────────┼── 🚪 53
-                 ├── 🚪 80
-                 ├── 🚪 443
-                 ├── 🚪 8080
-                 └── 🚪 ...
-
-That pattern can resemble port scanning.
-
-🚨 Simple Anomaly Rule
-
-Our analyzer can use a simple threshold.
+The current implementation identifies unusually large packets as suspicious.
 
 For example:
 
-One IP
-  │
-  ▼
-Contacts many different ports
-  │
-  ▼
-100+ unique ports
-  │
-  ▼
-🚨 ALERT
+Normal packet
+     │
+     ▼
+📦 500 bytes
+     │
+     ▼
+✓ Normal
 
-Example output:
+Compared with:
 
-╔════════════════════════════════════╗
-║          ⚠️ ALERT                  ║
-╠════════════════════════════════════╣
-║ Source IP: 192.168.1.50            ║
-║ Unique ports: 137                  ║
-║                                    ║
-║ Possible port scanning pattern     ║
-║ detected.                          ║
-╚════════════════════════════════════╝
+Large packet
+     │
+     ▼
+📦 2040 bytes
+     │
+     ▼
+⚠️ Suspicious
 
-⚠️ Important
+The system records suspicious packets in a separate CSV file.
 
-This does not automatically mean an attack happened.
+Important
 
-It simply means:
+An anomaly does not automatically mean that an attack has occurred.
 
-"This traffic matches a pattern that we decided is worth
-checking."
+It simply means that the packet matches a rule that has been defined as unusual and deserves further investigation.
 
-🔄 Complete Analysis Pipeline
+📈 Step 6 — Visualizations
 
-Everything now comes together:
+The project uses matplotlib to generate charts from the analyzed traffic.
 
-                    🌐 NETWORK
-                        │
-                        ▼
-                  📦 PACKETS
-                        │
-                        ▼
-                🦈 WIRESHARK
-                        │
-                        ▼
-                  📁 .PCAP FILE
-                        │
-                        ▼
-                 🐍 PYTHON
-                        │
-                        ▼
-                    🕷️ SCAPY
-                        │
-                        ▼
-              🔍 EXTRACT INFORMATION
-                        │
-       ┌────────────────┼────────────────┐
-       ▼                ▼                ▼
-   🌐 Protocols      👥 IPs          📏 Sizes
-       │                │                │
-       └────────────────┼────────────────┘
-                        ▼
-                    🐼 PANDAS
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-          📊 Statistics       🚨 Detection
-              │                   │
-              └─────────┬─────────┘
-                        ▼
-                   📈 MATPLOTLIB
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-           📊 CHARTS            🚨 ALERTS
+Currently, three visualizations are produced.
 
-🏗️ Project Architecture
+1. Protocol Distribution
 
-flowchart TD
-    A["🌐 Network Traffic"] --> B["🦈 Wireshark"]
-    B --> C["📁 traffic.pcap"]
+Shows how many packets belong to each protocol.
 
-    C --> D["🐍 Python"]
-    D --> E["🕷️ Scapy"]
+TCP
+UDP
+ICMP
+ARP
+OTHER
+2. Packet Size Distribution
 
-    E --> F["📦 Extract Packet Data"]
+Shows how packet sizes are distributed throughout the capture.
 
-    F --> G["🌐 Protocol Analysis"]
-    F --> H["👥 Source / Destination IP"]
-    F --> I["📏 Packet Size"]
-    F --> J["🔢 Port Activity"]
+3. Traffic Over Time
 
-    G --> K["🐼 pandas"]
-    H --> K
-    I --> K
-    J --> L["🚨 Anomaly Detector"]
+Shows how network traffic changes throughout the captured period.
 
-    K --> M["📊 matplotlib"]
-    L --> M
+These charts make large amounts of packet data easier to understand.
 
-    M --> N["📈 Visual Reports"]
-    M --> O["🚨 Alerts"]
+🐼 Step 7 — pandas
 
+The extracted packet information is organized using pandas.
+
+Conceptually, the data looks like:
+
+Timestamp	Length	Protocol	Source	Destination
+...	72	UDP	192.168.1.10	8.8.8.8
+...	512	TCP	192.168.1.10	1.1.1.1
+...	98	ICMP	192.168.1.20	192.168.1.1
+
+Using pandas makes it easier to:
+
+Count packets
+Group protocols
+Calculate statistics
+Filter suspicious packets
+Export results to CSV
 🗂️ Project Structure
 
-A clean project can be organized like this:
+The project is organized into separate modules:
 
-network-traffic-analyzer/
+Network-Traffic-Analyze/
 │
 ├── 📁 data/
 │   └── traffic.pcap
 │
+├── 📁 output/
+│   ├── anomalies.csv
+│   ├── traffic_analysis.csv
+│   ├── protocol_distribution.png
+│   ├── packet_size_distribution.png
+│   └── traffic_over_time.png
+│
 ├── 📁 src/
 │   ├── analyzer.py
-│   ├── protocols.py
-│   ├── statistics.py
 │   ├── anomaly_detector.py
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── statistics.py
 │   └── visualizer.py
 │
-├── 📁 output/
-│   ├── protocol_distribution.png
-│   ├── top_talkers.png
-│   └── packet_sizes.png
-│
-├── 🐍 main.py
-├── 📄 requirements.txt
-└── 📖 README.md
+└── 📖 Readme.md
+🧩 Project Modules
+analyzer.py
 
-The exact structure can change as the implementation develops.
+Responsible for reading the PCAP file and extracting packet-level information.
 
-⚙️ Technologies
+PCAP
+ ↓
+Scapy
+ ↓
+Packet information
+ ↓
+pandas DataFrame
+statistics.py
 
-Technology          Simple Explanation
+Responsible for calculating traffic statistics such as:
 
-🦈 Wireshark    Helps capture and inspect network packets
-🐍 Python       Main programming language
-🕷️ Scapy        Reads and inspects packets
-🐼 pandas       Organizes and analyzes packet data
-📊 matplotlib   Creates charts and visualizations
-📦 PCAP         Stores captured network packets
+Total packets
+Total bytes
+Average packet size
+Protocol distribution
+anomaly_detector.py
 
-🧪 Running the Project
+Responsible for identifying packets that match the project's anomaly rule.
+
+Currently, the main rule focuses on unusually large packets.
+
+visualizer.py
+
+Responsible for generating traffic charts using matplotlib.
+
+The current visualizations are:
+
+protocol_distribution.png
+packet_size_distribution.png
+traffic_over_time.png
+main.py
+
+Acts as the main entry point of the project.
+
+It connects the different modules:
+
+PCAP
+ ↓
+Analyzer
+ ↓
+Statistics
+ ↓
+Anomaly Detection
+ ↓
+Visualization
+ ↓
+Reports
+⚙️ Technologies Used
+Technology	Purpose
+🐍 Python	Main programming language
+🕷️ Scapy	Packet reading and inspection
+🐼 pandas	Data organization and analysis
+📊 matplotlib	Data visualization
+🦈 Wireshark	Network packet capture
+📦 PCAP	Network traffic capture format
+📦 Installation
+
+Make sure Python is installed.
 
 Install the required libraries:
 
-pip install scapy pandas matplotlib
+pip install -r src/requirements.txt
 
-Or:
+The requirements currently include:
 
-pip install -r requirements.txt
+scapy
+pandas
+matplotlib
+▶️ Running the Project
 
-Then the analyzer can be run against a capture file:
+Place a PCAP file inside the data folder.
 
-python main.py data/traffic.pcap
+For example:
 
-The general flow is:
+data/
+└── traffic.pcap
 
-📁 traffic.pcap
+Then run:
+
+python src/main.py
+
+The program will read the PCAP file and analyze the captured packets.
+
+📄 Example Terminal Output
+
+A typical analysis looks like:
+
+======================================
+       NETWORK TRAFFIC ANALYZER
+======================================
+
+Reading PCAP file: data\traffic.pcap
+Total packets analyzed: 167092
+
+========== TRAFFIC STATISTICS ==========
+Total Packets       : 167092
+Total Bytes         : 25946647
+Average Packet Size : 155.28 bytes
+
+Protocol Distribution:
+  TCP       : ...
+  UDP       : ...
+  ICMP      : ...
+  ARP       : ...
+  OTHER     : ...
+========================================
+
+========== ANOMALY DETECTION ==========
+Anomalies detected: ...
+
+========== VISUALIZATIONS ==========
+Created: output\protocol_distribution.png
+Created: output\packet_size_distribution.png
+Created: output\traffic_over_time.png
+====================================
+
+========== ANALYSIS COMPLETE ==========
+Traffic data saved to : output\traffic_analysis.csv
+Anomalies saved to     : output\anomalies.csv
+=======================================
+
+The actual numbers depend on the PCAP file used.
+
+📁 Output Files
+
+After running the analyzer, the output directory contains the analysis results.
+
+traffic_analysis.csv
+
+Contains packet-level information extracted from the PCAP.
+
+Example:
+
+timestamp,length,protocol,source,destination
+...,72,UDP,192.168.1.10,8.8.8.8
+...,512,TCP,192.168.1.10,1.1.1.1
+anomalies.csv
+
+Contains packets identified as suspicious by the anomaly detector.
+
+Example:
+
+timestamp,length,protocol,source,destination
+...,2040,TCP,192.168.1.20,192.168.1.10
+📊 Generated Charts
+
+The analyzer generates:
+
+output/
+│
+├── protocol_distribution.png
+├── packet_size_distribution.png
+└── traffic_over_time.png
+
+These charts provide a visual summary of the captured traffic.
+
+🌐 Planned Web Dashboard
+
+A web dashboard can be added on top of the existing analysis engine.
+
+The planned workflow is:
+
+📁 Upload PCAP
        │
        ▼
-🐍 python main.py
+🔍 Analyze Traffic
        │
        ▼
-🕷️ Scapy reads packets
-       │
-       ▼
-🔍 Analyzer extracts information
-       │
-       ├──────────────┐
-       ▼              ▼
-    📊 Stats       🚨 Alerts
-       │              │
-       └──────┬───────┘
-              ▼
-         📈 Results
+┌─────────────────────────────┐
+│     NETWORK DASHBOARD       │
+│                             │
+│ 📦 Total Packets            │
+│ 💾 Total Traffic            │
+│ 📊 Protocol Distribution    │
+│ 📏 Packet Sizes             │
+│ 🚨 Anomaly Count            │
+│ 📈 Traffic Over Time        │
+│ 📄 Analysis Results         │
+└─────────────────────────────┘
 
-📄 Example Output
+The dashboard will provide a more user-friendly way to demonstrate the analyzer without requiring users to read terminal output.
 
-A terminal report can look something like:
+🎯 Project Goals
 
-╔══════════════════════════════════════════╗
-║       🔎 NETWORK TRAFFIC ANALYZER        ║
-╚══════════════════════════════════════════╝
+The main goal of this project is to make network traffic analysis easier to understand.
 
-📁 File: traffic.pcap
+Instead of looking at thousands of raw packets:
 
-📦 Total Packets: 5000
+📦 📦 📦 📦 📦 📦 📦 📦 📦
 
-🌐 Protocol Distribution
-────────────────────────
-TCP   : 3000
-UDP   : 1200
-DNS   :  600
-ICMP  :  200
+the analyzer converts them into:
 
-👥 Top Source IPs
-────────────────────────
-192.168.1.10 : 1250
-192.168.1.15 :  830
-192.168.1.20 :  420
+📊 Statistics
+📈 Charts
+🚨 Alerts
+📄 Reports
+🛡️ Security and Ethics
 
-🎯 Top Destination IPs
-────────────────────────
-8.8.8.8      : 700
-1.1.1.1      : 450
-192.168.1.1  : 400
+This project is intended for:
 
-🚨 Anomaly Detection
-────────────────────────
-⚠️ 192.168.1.50 contacted 137 unique ports
+Learning
+Cybersecurity education
+Network analysis
+Defensive security research
+Authorized testing
 
-📊 Charts generated successfully.
+Only capture or analyze network traffic that you have permission to inspect.
 
-Note: These numbers are only examples to show what the output can
-look like. Actual values come from the PCAP file being analyzed.
-
-🛡️ Why This Project Is Useful
-
-This project connects several concepts that are often learned
-separately:
-
-       🌐 NETWORKING
-             │
-       ┌─────┴─────┐
-       ▼           ▼
-   TCP / UDP     IP / Ports
-       │           │
-       └─────┬─────┘
-             ▼
-        📦 PACKETS
-             │
-             ▼
-          🐍 PYTHON
-             │
-       ┌─────┴─────┐
-       ▼           ▼
-    🕷️ Scapy    🐼 pandas
-       │           │
-       └─────┬─────┘
-             ▼
-        📊 matplotlib
-             │
-       ┌─────┴─────┐
-       ▼           ▼
-     Charts      Alerts
-
-Instead of only reading about networking, we can actually look at
-network traffic and turn it into data.
+Do not use the project to monitor networks, devices, or users without authorization.
 
 🚀 Future Improvements
 
-Once the basic analyzer works, it can be extended with:
+The current version focuses on basic PCAP analysis.
 
-                    🚀 FUTURE
-                       │
-       ┌───────────────┼────────────────┐
-       ▼               ▼                ▼
-   📡 Live Capture   🌍 GeoIP       📊 Dashboard
-       │               │                │
-       ▼               ▼                ▼
-   Real-time       IP locations     Web UI
-    analysis
-       │
-       ├───────────────┐
-       ▼               ▼
-   🤖 Advanced      📄 Export
-    detection       CSV / JSON
+Possible future improvements include:
 
-Possible additions:
+🌐 Web dashboard
+📡 Live packet capture
+🔎 More advanced anomaly detection
+📊 Interactive charts
+📄 JSON report generation
+🔢 Port analysis
+🌍 GeoIP visualization
+🤖 Machine-learning-based anomaly detection
 
-📡 Real-time packet capture
+These are future extensions and are not required for the current basic analyzer.
 
-📊 Interactive dashboard
+🧠 What We Learn
 
-🌍 IP/GeoIP visualization
-
-📄 CSV and JSON reports
-
-🚨 More anomaly rules
-
-📈 Request-rate monitoring
-
-🔎 More protocol analysis
-
-🤖 More advanced anomaly detection
-
-🔐 Security & Ethics
-
-This project should be used for learning, defensive analysis, and
-authorized testing.
-
-Only capture or inspect traffic that you have permission to analyze.
-
-For learning and development, using:
-
-🧪 Local Lab
-     +
-📦 Sample PCAP
-     +
-🐍 Python
-
-is a safe way to practice packet analysis.
-
-🧠 What We Actually Learn
-
-By completing this project, we connect:
+This project combines several important concepts:
 
 🌐 Networking
       +
@@ -785,54 +526,46 @@ By completing this project, we connect:
       +
 📦 Packet Analysis
       +
-📊 Data Analysis
+🐼 Data Analysis
       +
-📈 Visualization
+📊 Visualization
       +
-🛡️ Basic Security
+🛡️ Basic Cybersecurity
 
-And the entire project can be remembered with one simple sentence:
+The project provides practical experience with:
 
-📦 Capture → 🔍 Understand → 📊 Analyze → 🚨 Detect → 📈 Visualize
+Network packets
+TCP/IP protocols
+PCAP files
+Python programming
+Scapy
+pandas
+Data visualization
+Basic anomaly detection
+⭐ Project Summary
 
-⭐ Final Picture
+The entire project can be remembered using one simple pipeline:
 
-                 🌐 NETWORK
-                     │
-                     ▼
-               📦 📦 📦 📦
-                  PACKETS
-                     │
-                     ▼
-                 🦈 PCAP
-                     │
-                     ▼
-              🐍 PYTHON + 🕷️ SCAPY
-                     │
-                     ▼
-              🔍 UNDERSTAND DATA
-                     │
-          ┌──────────┼──────────┐
-          ▼          ▼          ▼
-        🌐 WHAT?   👥 WHO?    📏 HOW BIG?
-          │          │          │
-          └──────────┼──────────┘
-                     ▼
-                  🐼 PANDAS
-                     │
-             ┌───────┴───────┐
-             ▼               ▼
-          📊 ANALYZE       🚨 CHECK
-             │               │
-             └───────┬───────┘
-                     ▼
-                📈 MATPLOTLIB
-                     │
-             ┌───────┴───────┐
-             ▼               ▼
-          📊 CHARTS         🚨 ALERTS
+🦈 CAPTURE
+     ↓
+📁 PCAP
+     ↓
+🔍 ANALYZE
+     ↓
+📊 CALCULATE
+     ↓
+🚨 DETECT
+     ↓
+📈 VISUALIZE
+     ↓
+📄 REPORT
 
-🎯 The goal is simple:
+Network Traffic Analyzer turns raw captured network traffic into information that is easier for people to understand.
 
-Take complicated-looking network traffic and turn it into something
-a human can understand.
+👨‍💻 Project
+
+Network Traffic Analyzer
+
+Built using:
+
+Python • Scapy • pandas • matplotlib • Wireshark
