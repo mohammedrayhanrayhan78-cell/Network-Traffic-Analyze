@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+
+data/*.pcap
+data/*.pcapng
+
+output/*.csv
+output/*.png
+
+.venv/
+venv/
+.env
