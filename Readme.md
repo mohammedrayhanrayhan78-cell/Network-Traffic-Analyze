@@ -569,3 +569,10 @@ Network Traffic Analyzer
 Built using:
 
 Python • Scapy • pandas • matplotlib • Wireshark
+
+## Live demo
+
+- Website (Netlify): https://sniffr-traffic-analyzer.netlify.app
+- Website (Railway): https://sniffr-web-production.up.railway.app
+- API health check: https://sniffr-api-production.up.railway.app/health
+
