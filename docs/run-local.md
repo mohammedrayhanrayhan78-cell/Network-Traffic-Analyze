@@ -13,7 +13,6 @@ Follow these exact steps to run Sniffr locally.
    ```bash
    cd analyzer
    pip install -r requirements.txt
-   $env:UPLOAD_DIR="C:\Users\moham\sniffr\uploads"
    $env:REDIS_HOST="localhost"
    python worker.py
    ```

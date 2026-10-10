@@ -6,18 +6,19 @@ const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const Redis = require('ioredis');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-// Accept comma-separated origins so you can whitelist both Netlify URL and localhost
+// FRONTEND_ORIGIN can be one URL or several separated by commas (no trailing slash needed)
 const FRONTEND_ORIGINS = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
   .split(',')
-  .map(o => o.trim())
+  .map((s) => s.trim().replace(/\/+$/, ''))
   .filter(Boolean);
-const UPLOAD_DIR = process.env.UPLOAD_DIR || '/data/uploads';
+const REDIS_URL = process.env.REDIS_URL; // set by Railway: ${{Redis.REDIS_URL}}
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const UPLOAD_TTL_SECONDS = 3600;
 const TOKEN_TTL_SECONDS = parseInt(process.env.TOKEN_TTL_SECONDS || '3600', 10);
 const UPLOAD_RATE_MAX = parseInt(process.env.UPLOAD_RATE_MAX || '10', 10);
 const GENERAL_RATE_MAX = parseInt(process.env.GENERAL_RATE_MAX || '120', 10);
@@ -29,14 +30,10 @@ if (!TOKEN_SECRET) {
   console.warn('WARNING: TOKEN_SECRET env var is missing. A random secret was generated, but tokens will be invalid upon restart.');
 }
 
-// Railway Redis plugin injects REDIS_URL automatically; fall back to host/port for local dev
-const redisConfig = process.env.REDIS_URL
-  ? { lazyConnect: true } // ioredis accepts a URL string as first arg
-  : { host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT || '6379', 10), lazyConnect: true };
-
-const redis = process.env.REDIS_URL
-  ? new Redis(process.env.REDIS_URL, redisConfig)
-  : new Redis(redisConfig);
+// family: 0 lets Railway's private network work whether it resolves to IPv4 or IPv6
+const redis = REDIS_URL
+  ? new Redis(REDIS_URL, { family: 0, lazyConnect: true })
+  : new Redis({ host: REDIS_HOST, port: REDIS_PORT, lazyConnect: true });
 
 redis.on('error', (err) => {
   console.error('Redis error', err);
@@ -44,8 +41,15 @@ redis.on('error', (err) => {
 
 redis.connect().catch(() => {}); // Attempt initial connection, error is caught and logged
 
+// Railway sits behind a proxy: trust it so rate limits see the real visitor IP
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({ origin: FRONTEND_ORIGINS }));
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true, redis: redis.status });
+});
 
 // Rate limits
 const generalLimiter = rateLimit({
@@ -73,17 +77,10 @@ const reportLimiter = rateLimit({
 });
 
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
-    const tempName = crypto.randomBytes(16).toString('hex');
-    cb(null, tempName);
-  }
-});
-const upload = multer({ 
-  storage: storage,
+// Uploads are kept in memory and handed to the worker through Redis.
+// (On Railway the API and the worker run on different machines, so a shared folder will not work.)
+const upload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
@@ -137,47 +134,38 @@ function verifyToken(req, res, next) {
 
 app.post('/api/upload', uploadLimiter, upload.single('file'), async (req, res) => {
   if (redis.status !== 'ready') {
-    if (req.file) fs.unlink(req.file.path, () => {});
     return res.status(503).json({ error: 'Redis down' });
   }
 
-  if (!req.file) {
+  if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
     return res.status(400).json({ error: 'Empty file' });
   }
 
   try {
-    const fd = fs.openSync(req.file.path, 'r');
-    const buffer = Buffer.alloc(4);
-    const bytesRead = fs.readSync(fd, buffer, 0, 4, 0);
-    fs.closeSync(fd);
+    const buf = req.file.buffer;
 
-    if (bytesRead < 4) {
-      fs.unlinkSync(req.file.path);
+    if (buf.length < 4) {
       return res.status(400).json({ error: 'File too small' });
     }
 
-    const hex = buffer.toString('hex');
+    const hex = buf.subarray(0, 4).toString('hex');
     const validMagics = ['d4c3b2a1', 'a1b2c3d4', '4d3cb2a1', 'a1b23c4d', '0a0d0d0a'];
-    
+
     if (!validMagics.includes(hex)) {
-      fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Invalid file magic' });
     }
 
     const jobId = crypto.randomUUID();
-    const newPath = path.join(UPLOAD_DIR, `${jobId}.pcap`);
-    
-    fs.renameSync(req.file.path, newPath);
-    
+
+    // order matters: file first, then status, then the queue entry the worker is waiting on
+    await redis.set(`upload:${jobId}`, buf, 'EX', UPLOAD_TTL_SECONDS);
     await redis.set(`job:${jobId}:status`, 'queued', 'EX', 3600);
     await redis.rpush('jobs', jobId);
-    
+
     const token = generateToken(jobId);
     return res.status(202).json({ jobId, token });
   } catch (err) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
+    console.error('upload failed', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -258,6 +246,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
 });
